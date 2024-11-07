@@ -39,7 +39,8 @@ public class SocialMediaController {
         app.post("/messages", this::createNewMessage);      
         app.get("/messages", this::retrieveAllMessages);
         app.get("/messages/{message_id}", this::retrieveMessageById);  
-        app.delete("/messages/{message_id}", this::deleteMessageBYMessageId);             
+        app.delete("/messages/{message_id}", this::deleteMessageBYMessageId);     
+        app.patch("/messages/{message_id}", this::updateMessageById);    
         app.get("/accounts/{account_id}/messages", this::retrieveAllMessagesByAccountId);  
 
         return app;
@@ -183,6 +184,40 @@ public class SocialMediaController {
             }
         } else {
             ctx.status(200); 
+        }
+    }
+
+
+    public void updateMessageById(Context ctx) {
+        int msg_Id = Integer.parseInt(ctx.pathParam("message_id"));
+        String content_Body = ctx.body();
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Message revised_msg = objectMapper.readValue(content_Body, Message.class);
+            
+            String update_text = revised_msg.getMessage_text();
+            if (update_text == null || update_text.isEmpty() || update_text.length() > 255) {
+                ctx.status(400);
+                return;
+            }
+            
+            Message current_msg = messageService.getMsgById(msg_Id);
+            if (current_msg == null) {
+                ctx.status(400);
+                return;
+            }
+            
+            boolean checkupdatemsg = messageService.updateMsgText(msg_Id, update_text);
+            if (checkupdatemsg) {                
+                current_msg.setMessage_text(update_text); 
+                ctx.json(current_msg);
+                ctx.status(200);
+            } else {
+                ctx.status(400);
+            }
+        } catch (Exception e) {
+            ctx.status(400);
         }
     }
     
